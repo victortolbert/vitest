@@ -1,17 +1,17 @@
-import type { ServerResponse } from 'http'
+import type { IncomingMessage, ServerResponse } from 'http'
 import type { Connect } from 'vite'
 import { stringify } from 'flatted'
 import { API_PATH } from '../constants'
 
 export function sendFlatted(res: ServerResponse, data: any) {
-  res.setHeader('Content-Type', 'application/json')
+  res.setHeader('Content-Type', 'text/plain')
   res.write(stringify(data))
   res.statusCode = 200
   res.end()
 }
 
 export default function middlewareAPI(): Connect.NextHandleFunction {
-  return (req, res, next) => {
+  return async(req, res, next) => {
     if (!req.url?.startsWith(API_PATH))
       return next()
 
@@ -33,4 +33,20 @@ export default function middlewareAPI(): Connect.NextHandleFunction {
     res.statusCode = 404
     res.end()
   }
+}
+
+export function getBodyJson<T>(req: IncomingMessage): Promise<T> {
+  return new Promise<any>((resolve, reject) => {
+    let body = ''
+    req.on('data', chunk => body += chunk)
+    req.on('error', reject)
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(body) || {})
+      }
+      catch (e) {
+        reject(e)
+      }
+    })
+  })
 }

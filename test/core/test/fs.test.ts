@@ -3,7 +3,6 @@ import fs from 'fs/promises'
 import { fileURLToPath } from 'url'
 import { describe, it, expect } from 'vitest'
 import { timeout } from '../src/timeout'
-
 const content = 'Hello, World!'
 const filename = 'fixtures/hi.txt'
 

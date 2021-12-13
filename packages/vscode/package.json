@@ -15,10 +15,9 @@
   "license": "MIT",
   "publisher": "antfu",
   "main": "./dist/index.js",
-  "preview": true,
   "scripts": {
-    "build": "tsup src/index.ts --external vscode",
-    "dev": "nr build --watch src",
+    "build": "rollup -c",
+    "dev": "rollup -c --watch src",
     "vscode:prepublish": "npm run build"
   },
   "contributes": {
@@ -38,10 +37,14 @@
   ],
   "devDependencies": {
     "@types/vscode": "^1.62.0",
-    "tsup": "^5.11.1"
+    "flatted": "^3.2.4",
+    "node-fetch": "^3.1.0",
+    "typescript": "^4.5.3",
+    "ws": "^8.3.0"
   },
   "engines": {
     "vscode": "^1.62.0"
   },
-  "icon": "res/logo.png"
+  "icon": "res/logo.png",
+  "preview": true
 }
