@@ -4,7 +4,7 @@ import { mergeConfig, createServer } from 'vite'
 import { findUp } from 'find-up'
 import type { Reporter, UserConfig, ResolvedConfig, ArgumentsType } from '../types'
 import { SnapshotManager } from '../integrations/snapshot/manager'
-import { configFiles } from '../constants'
+import { configFiles, defaultPort } from '../constants'
 import { toArray, hasFailed } from '../utils'
 import { ConsoleReporter } from '../reporters/console'
 import type { WorkerPool } from './pool'
@@ -102,8 +102,7 @@ async function startServer(options: UserConfig, viteOverrides: ViteUserConfig = 
       {
         name: 'vitest',
         async configureServer(server) {
-          if (options.api)
-            server.middlewares.use((await import('../api/middleware')).default())
+          (await import('../api/setup')).configureServer(server)
         },
       },
     ],
@@ -120,6 +119,9 @@ async function startServer(options: UserConfig, viteOverrides: ViteUserConfig = 
 
   const server = await createServer(mergeConfig(config, viteOverrides))
   await server.pluginContainer.buildStart({})
+
+  if (options.api === true)
+    options.api = defaultPort
 
   if (typeof options.api === 'number')
     await server.listen(options.api)

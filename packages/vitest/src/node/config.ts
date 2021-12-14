@@ -1,7 +1,7 @@
 import { resolve } from 'path'
 import type { ResolvedConfig as ResolvedViteConfig } from 'vite'
 import type { UserConfig, ResolvedConfig } from '../types'
-import { defaultExclude, defaultInclude, defaultPort } from '../constants'
+import { defaultExclude, defaultInclude } from '../constants'
 
 export function resolveConfig(
   options: UserConfig,
@@ -44,9 +44,6 @@ export function resolveConfig(
 
   resolved.setupFiles = Array.from(resolved.setupFiles || [])
     .map(i => resolve(resolved.root, i))
-
-  if (resolved.api === true)
-    resolved.api = defaultPort
 
   return resolved
 }

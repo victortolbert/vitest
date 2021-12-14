@@ -2,6 +2,7 @@ import type { ExtensionContext, TestController, TestItem, TestItemCollection, Te
 import { TestMessage, TestRunRequest, TestRunProfileKind, tests, Uri } from 'vscode'
 import { parse } from 'flatted'
 import fetch from 'node-fetch'
+import { WebSocket } from 'ws'
 import type { File, Task } from '../../vitest/src/types'
 
 function url(path = '/') {
@@ -58,6 +59,14 @@ function createTaskItem(task: Task, parent: TestItemCollection, controller: Test
 export async function activate(context: ExtensionContext) {
   const ctrl = tests.createTestController('vitest', 'Vitest')
   context.subscriptions.push(ctrl)
+
+  const ws = new WebSocket('ws://localhost:51204/__vitest_api__')
+  ws.on('message', (msg) => {
+    console.log({ msg })
+  })
+  ws.on('open', () => {
+    ws.send('hi')
+  })
 
   ctrl.createRunProfile('Run Tests', TestRunProfileKind.Run, (request, token) => {
     // console.log({ request })
