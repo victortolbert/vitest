@@ -2,6 +2,7 @@ import type { WebSocket } from 'ws'
 import { WebSocketServer } from 'ws'
 import { API_PATH } from '../constants'
 import type { Vitest } from '../node'
+import { WebSocketReporter } from '../reporters/ws'
 import middlewareAPI from './middleware'
 
 export function setup(ctx: Vitest) {
@@ -36,4 +37,6 @@ export function setup(ctx: Vitest) {
       ctx.console.log('msg form ', ws.url, String(data))
     })
   }
+
+  ctx.reporters.push(new WebSocketReporter(ctx, wss, clients))
 }
