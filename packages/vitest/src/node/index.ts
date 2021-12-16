@@ -263,7 +263,7 @@ export async function createVitest(options: UserConfig, viteOverrides: ViteUserC
           ctx.setServer(options, server)
           haveStarted = true
           if (options.api)
-            (await import('../api/setup')).configureServer(server)
+            (await import('../api/setup')).setup(ctx)
         },
       },
     ],

@@ -1,15 +1,15 @@
-import type { ViteDevServer } from 'vite'
 import type { WebSocket } from 'ws'
 import { WebSocketServer } from 'ws'
 import { API_PATH } from '../constants'
+import type { Vitest } from '../node'
 import middlewareAPI from './middleware'
 
-export function configureServer(server: ViteDevServer) {
+export function setup(ctx: Vitest) {
   const wss = new WebSocketServer({ noServer: true })
 
   const clients = new Set<WebSocket>()
 
-  server.httpServer?.on('upgrade', (request, socket, head) => {
+  ctx.server.httpServer?.on('upgrade', (request, socket, head) => {
     if (!request.url)
       return
 
@@ -23,7 +23,7 @@ export function configureServer(server: ViteDevServer) {
     })
   })
 
-  server.middlewares.use(middlewareAPI())
+  ctx.server.middlewares.use(middlewareAPI(ctx))
 
   function setupClient(ws: WebSocket) {
     clients.add(ws)
@@ -33,7 +33,7 @@ export function configureServer(server: ViteDevServer) {
     })
 
     ws.on('message', (data) => {
-      console.log('msg form ', ws.url, String(data))
+      ctx.console.log('msg form ', ws.url, String(data))
     })
   }
 }
