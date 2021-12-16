@@ -1,4 +1,6 @@
-import type { RunMode, Suite, Test, Task, Arrayable, Nullable } from './types'
+import c from 'picocolors'
+import { isPackageExists } from 'local-pkg'
+import type { Suite, Test, Task, Arrayable, Nullable } from './types'
 
 /**
  * Convert `Arrayable<T>` to `Array<T>`
@@ -19,6 +21,8 @@ export function notNullish<T>(v: T | null | undefined): v is NonNullable<T> {
 export function slash(str: string) {
   return str.replace(/\\/g, '/')
 }
+
+export const noop = () => {}
 
 /**
  * Partition in tasks groups by consecutive computeMode ('serial', 'concurrent')
@@ -42,17 +46,25 @@ export function partitionSuiteChildren(suite: Suite) {
 }
 
 /**
- * If any items been marked as `only`, mark all other items as `skip`.
+ * If any tasks been marked as `only`, mark all other tasks as `skip`.
  */
-export function interpretOnlyMode(items: { mode: RunMode }[]) {
-  if (items.some(i => i.mode === 'only')) {
-    items.forEach((i) => {
-      if (i.mode === 'run')
-        i.mode = 'skip'
-      else if (i.mode === 'only')
-        i.mode = 'run'
+export function interpretOnlyMode(tasks: Task[]) {
+  if (tasks.some(t => t.mode === 'only')) {
+    tasks.forEach((t) => {
+      if (t.mode === 'run')
+        t.mode = 'skip'
+      else if (t.mode === 'only')
+        t.mode = 'run'
     })
   }
+  tasks.forEach((t) => {
+    if (t.type === 'suite') {
+      if (t.mode === 'skip')
+        t.tasks.forEach(c => c.mode === 'run' && (c.mode = 'skip'))
+      else
+        interpretOnlyMode(t.tasks)
+    }
+  })
 }
 
 export function getTests(suite: Arrayable<Suite>): Test[] {
@@ -86,4 +98,29 @@ export function getNames(task: Task) {
   }
 
   return names
+}
+
+export async function ensurePackageInstalled(dependency: string, promptInstall = !process.env.CI) {
+  if (isPackageExists(dependency))
+    return true
+
+  // eslint-disable-next-line no-console
+  console.log(c.red(`${c.inverse(c.red(' MISSING DEP '))} Can not find dependency '${dependency}'\n`))
+
+  if (!promptInstall)
+    return false
+
+  const prompts = await import('prompts')
+  const { install } = await prompts.prompt({
+    type: 'confirm',
+    name: 'install',
+    message: `Do you want to install ${c.green(dependency)}?`,
+  })
+
+  if (install) {
+    await (await import('@antfu/install-pkg')).installPackage(dependency)
+    return true
+  }
+
+  return false
 }

@@ -3,3 +3,4 @@ packages:
   - 'test/*'
   - 'docs'
   - '!packages/vscode'
+  - '!test/vue2'

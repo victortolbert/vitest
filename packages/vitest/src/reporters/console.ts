@@ -31,7 +31,7 @@ export class ConsoleReporter implements Reporter {
 
   constructor(public ctx: Vitest) {
     const mode = ctx.config.watch ? c.yellow(' DEV ') : c.cyan(' RUN ')
-    this.log(`${c.inverse(c.bold(mode))} ${c.gray(this.ctx.config.root)}\n`)
+    this.log(`\n${c.inverse(c.bold(mode))} ${c.gray(this.ctx.config.root)}\n`)
     this.start = performance.now()
   }
 
@@ -84,7 +84,7 @@ export class ConsoleReporter implements Reporter {
       this.error()
       for (const suite of failedSuites) {
         this.error(c.red(`\n- ${getFullName(suite)}`))
-        await printError(suite.result?.error)
+        await printError(suite.result?.error, this.ctx)
         errorDivider()
       }
     }
@@ -94,7 +94,7 @@ export class ConsoleReporter implements Reporter {
       this.error()
       for (const test of failedTests) {
         this.error(`${c.red(c.bold(c.inverse(' FAIL ')))} ${getFullName(test)}`)
-        await printError(test.result?.error)
+        await printError(test.result?.error, this.ctx)
         errorDivider()
       }
     }
@@ -166,5 +166,9 @@ export class ConsoleReporter implements Reporter {
     const task = log.taskId ? this.ctx.state.idMap[log.taskId] : undefined
     this.log(c.gray(log.type + c.dim(` | ${task ? getFullName(task) : 'unknown test'}`)))
     process[log.type].write(`${log.content}\n`)
+  }
+
+  onServerRestart() {
+    this.log(c.cyan('Restarted due to config changes...'))
   }
 }

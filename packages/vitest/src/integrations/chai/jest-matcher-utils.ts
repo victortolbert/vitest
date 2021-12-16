@@ -4,7 +4,7 @@
 import c from 'picocolors'
 import type { Formatter } from 'picocolors/types'
 import { format as prettyFormat, plugins as prettyFormatPlugins } from 'pretty-format'
-import { generateDiff } from '../../reporters/error'
+import { unifiedDiff } from '../../reporters/error'
 
 export const EXPECTED_COLOR = c.green
 export const RECEIVED_COLOR = c.red
@@ -165,8 +165,8 @@ export type DiffOptions = {
   compareKeys?: any
 }
 
-// TODO do something with options
+// TODO: do something with options
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function diff(a: any, b: any, options?: DiffOptions) {
-  return generateDiff(stringify(a), stringify(b))
+  return unifiedDiff(stringify(a), stringify(b))
 }

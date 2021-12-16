@@ -12,6 +12,7 @@ const entry = [
   'src/node.ts',
   'src/runtime/worker.ts',
   'src/runtime/entry.ts',
+  'src/utils.ts',
 ]
 
 const external = [
@@ -34,7 +35,9 @@ export default [
           { find: /^node:(.+)$/, replacement: '$1' },
         ],
       }),
-      resolve(),
+      resolve({
+        preferBuiltins: true,
+      }),
       json(),
       commonjs(),
       esbuild({

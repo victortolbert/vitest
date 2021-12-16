@@ -1,8 +1,11 @@
+import readline from 'readline'
 import cac from 'cac'
 import c from 'picocolors'
 import type { UserConfig } from '../types'
 import { version } from '../../package.json'
-import { createVitest } from '.'
+import { ensurePackageInstalled } from '../utils'
+import type { Vitest } from './index'
+import { createVitest } from './index'
 
 const cli = cac('vitest')
 
@@ -55,15 +58,31 @@ async function run(cliFilters: string[], options: UserConfig) {
     // eslint-disable-next-line no-console
     console.log(c.magenta(c.bold('\nVitest is in closed beta exclusively for Sponsors')))
     // eslint-disable-next-line no-console
-    console.log(c.yellow('Learn more at https://vitest.dev\n'))
+    console.log(c.yellow('Learn more at https://vitest.dev'))
   }
 
   const ctx = await createVitest(options)
 
-  process.__vitest__ = ctx
+  process.chdir(ctx.config.root)
+
+  registerConsoleShortcuts(ctx)
+
+  if (ctx.config.environment && ctx.config.environment !== 'node') {
+    if (!await ensurePackageInstalled(ctx.config.environment))
+      process.exit(1)
+  }
+
+  ctx.onServerRestarted(() => {
+    // TODO: re-consider how to re-run the tests the server smartly
+    ctx.start(cliFilters)
+  })
 
   try {
-    await ctx.run(cliFilters)
+    await ctx.start(cliFilters)
+
+    if (ctx.config.watch)
+      // never resolves to keep the process running
+      await new Promise(() => {})
   }
   catch (e) {
     process.exitCode = 1
@@ -72,5 +91,28 @@ async function run(cliFilters: string[], options: UserConfig) {
   finally {
     if (!ctx.config.watch)
       await ctx.close()
+  }
+}
+
+function registerConsoleShortcuts(ctx: Vitest) {
+  // listen to keyboard input
+  if (process.stdin.isTTY) {
+    readline.emitKeypressEvents(process.stdin)
+    process.stdin.setRawMode(true)
+    process.stdin.on('keypress', (str: string) => {
+      if (str === '\x03' || str === '\x1B') // ctrl-c or esc
+        process.exit()
+
+      // is running, ignore keypress
+      if (ctx.runningPromise)
+        return
+
+      // press any key to exit on first run
+      if (ctx.isFirstRun)
+        process.exit()
+
+      // TODO: add more commands
+      // console.log(str, key)
+    })
   }
 }
