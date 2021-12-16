@@ -1,6 +1,7 @@
 import type { ExtensionContext, TestController, TestItem, TestItemCollection, TestRun } from 'vscode'
-import { TestMessage, TestRunRequest, TestRunProfileKind, tests, Uri } from 'vscode'
+import { window, TestMessage, TestRunRequest, TestRunProfileKind, tests, Uri } from 'vscode'
 import { parse } from 'flatted'
+import type { RequestInit } from 'node-fetch'
 import fetch from 'node-fetch'
 import { WebSocket } from 'ws'
 import type { File, Task } from '../../vitest/src/types'
@@ -9,8 +10,8 @@ function url(path = '/') {
   return `http://localhost:51204/__vitest_api__${path}`
 }
 
-async function fetchAPI(path = '/') {
-  return parse(await fetch(url(path)).then(res => res.text()))
+async function fetchAPI(path = '/', options?: RequestInit) {
+  return parse(await fetch(url(path), options).then(res => res.text()))
 }
 
 const tasksMap: Map<string, TestItem> = new Map()
@@ -57,19 +58,31 @@ function createTaskItem(task: Task, parent: TestItemCollection, controller: Test
 }
 
 export async function activate(context: ExtensionContext) {
+  const output = window.createOutputChannel('Vitest')
+
+  const log = (data: any) => {
+    output.appendLine(JSON.stringify(data, null, 2))
+  }
+
   const ctrl = tests.createTestController('vitest', 'Vitest')
   context.subscriptions.push(ctrl)
 
   const ws = new WebSocket('ws://localhost:51204/__vitest_api__')
-  ws.on('message', (msg) => {
-    console.log({ msg })
+  ws.on('message', (buffer) => {
+    const msg = JSON.parse(String(buffer))
+    log({ msg })
   })
   ws.on('open', () => {
     ws.send('hi')
   })
 
-  ctrl.createRunProfile('Run Tests', TestRunProfileKind.Run, (request, token) => {
-    // console.log({ request })
+  ctrl.createRunProfile('Run Tests', TestRunProfileKind.Run, async(request) => {
+    const run = ctrl.createTestRun(request)
+    await fetchAPI('/run', {
+      method: 'POST',
+      body: JSON.stringify({ files: request.include?.map(i => i.uri?.fsPath).filter(Boolean) }),
+    })
+    run.end()
   }, true)
 
   ctrl.resolveHandler = async(item) => {

@@ -30,6 +30,15 @@ export default function middlewareAPI(ctx: Vitest): Connect.NextHandleFunction {
       })
     }
 
+    if (url === '/run') {
+      const payload = await getBodyJson<{ files?: string[] }>(req)
+      if (payload.files?.length)
+        await ctx.runFiles(payload.files)
+      res.statusCode = 200
+      res.end()
+      return
+    }
+
     res.statusCode = 404
     res.end()
   }

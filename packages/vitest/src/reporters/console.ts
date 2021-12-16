@@ -39,7 +39,10 @@ export class ConsoleReporter implements Reporter {
     return relative(this.ctx.config.root, path)
   }
 
-  onStart() {
+  onStart(files?: string[]) {
+    if (files)
+      this.watchFilters = files
+
     if (isTTY) {
       const files = this.ctx.state.getFiles(this.watchFilters)
       if (!this.renderer)
